@@ -2,6 +2,7 @@ import { log, sanitize } from './util.mjs'
 import { Story } from './type.mjs'
 import { CREATE_BULLETPOINT_SUMMARY, CREATE_TITLE, YOU_MUST_WRITE_IN } from './default.mjs'
 import OpenAI from 'openai'
+import { translateAllInOneStep } from './translate.mts' // Importing the new function
 
 const openai = new OpenAI({
   organization: process.env.OPENAI_ORG_ID,
@@ -139,32 +140,20 @@ export const summarize = async (story: Story, lang = 'en'): Promise<Story> => {
   let commentSummary = []
   let title = story.title
 
-  const originContext = await generateContext(story.originBody, story.title, lang)
-  const commentContext = await generateContext(story.commentBody, story.title, lang)
-
-  try {
-    if (story.originBody.length === 0) {
-      throw new Error('🚨\toriginBody is empty')
-    }
-    originSummary = await createBulletPointSummary(story.title, originContext, lang)
-  } catch (e) {
-    log(e, 'error')
-  }
-  try {
-    commentSummary = await createBulletPointSummary(story.title, commentContext, lang)
-  } catch (e) {
-    log(e, 'error')
-  }
-  // try {
-  //   title = await createTitle(story.title, originContext, lang)
-  // } catch (e) {
-  //   log(e, 'error')
-  // }
+  // Modifying to use the new translateAllInOneStep function
+  const { title: translatedTitle, summary: translatedSummary, reaction: translatedReaction } = await translateAllInOneStep({
+    title: story.title,
+    summary: story.originSummary,
+    reaction: story.commentSummary,
+    titleLang: lang,
+    summaryLang: lang,
+    reactionLang: lang,
+  });
 
   return {
     ...story,
-    originSummary,
-    commentSummary,
-    title,
-  }
+    title: translatedTitle,
+    originSummary: translatedSummary,
+    commentSummary: translatedReaction,
+  };
 }

@@ -95,3 +95,58 @@ export const translate = async ({
 
   return translatedTexts
 }
+
+// New function to handle all-in-one translation step
+export async function translateAllInOneStep({
+  title,
+  summary,
+  reaction,
+  titleLang,
+  summaryLang,
+  reactionLang,
+}: {
+  title: string,
+  summary: string[],
+  reaction: string[],
+  titleLang: string,
+  summaryLang: string,
+  reactionLang: string
+}): Promise<{ title: string, summary: string[], reaction: string[] }> {
+  try {
+    // Constructing the prompt for GPT-4o
+    const prompt = `Translate the following texts ensuring consistency across translations:\n\nTitle: ${title}\n\nSummary:\n- ${summary.join('\n- ')}\n\nReaction:\n- ${reaction.join('\n- ')}\n\n`;
+
+    // Sending a single request to OpenAI's GPT-4o
+    const completion = await openai.chat.completions.create({
+      messages: [
+        {
+          role: 'system',
+          content: prompt + '\n\n' + YOU_MUST_WRITE_IN[titleLang] + '\n\n' + BEGIN_IMMEDIATELY[titleLang] + '\n\n',
+        },
+        { role: 'user', content: `RESULT:\n` },
+      ],
+      model: 'gpt-4o',
+      temperature: 0.5,
+    });
+
+    let { content } = completion.choices[0].message;
+
+    // Parsing the response to extract translated texts
+    const translatedTitle = content.match(/Title: (.*)\n/)[1];
+    const translatedSummary = content.match(/Summary:\n- (.*)\n/)[1].split('\n- ');
+    const translatedReaction = content.match(/Reaction:\n- (.*)/)[1].split('\n- ');
+
+    return {
+      title: sanitize(translatedTitle),
+      summary: translatedSummary.map(sanitize),
+      reaction: translatedReaction.map(sanitize),
+    };
+  } catch (error) {
+    log(`Error in translating texts: ${error}`, 'error');
+    return {
+      title: '',
+      summary: [],
+      reaction: [],
+    };
+  }
+}

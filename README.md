@@ -46,3 +46,14 @@ summarizes HN in 30 Languages 💬
 - [Tiếng Việt](https://hn.cho.sh/vi)
 - [简体中文](https://hn.cho.sh/zh-Hans)
 - [繁體中文](https://hn.cho.sh/zh-Hant)
+
+## Translation Process
+
+To ensure consistency in translations across different sections of content, Heimdall utilizes a unified translation module. This module processes the title, summary, reaction, and translation in a single step using GPT-4o, significantly reducing the number of external calls and ensuring uniformity in translated terms across sections.
+
+### Guidelines for Maintaining Consistency
+
+- Use the `translateAllInOneStep` function from the `scripts/translate.mts` module for translating content.
+- Provide the title, summary, and reactions along with their respective languages as parameters to the function.
+- The module ensures terminology consistency across title, summary, and reaction by utilizing context management within the GPT-4o prompt.
+- This approach helps maintain a coherent and consistent translation across different languages and sections of content.
