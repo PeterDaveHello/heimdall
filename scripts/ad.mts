@@ -1,3 +1,5 @@
+import { unifiedTranslate } from './translate.mjs'
+
 export const getAdImgHtml = (imglink?: string, link?: string) => {
   return `<a href=${
     link ?? 'https://airtable.com/appLfbX7pNQxpBx00/shrfpPSEbLVSXz4r7'

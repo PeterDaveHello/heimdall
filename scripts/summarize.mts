@@ -12,7 +12,7 @@ export const sleep = async (ms = 10000) => {
   return new Promise((resolve) => setTimeout(resolve, ms))
 }
 
-export const createBulletPointSummary = async (title, context, lang = 'en') => {
+export const createBulletPointSummary = async (title, context, reaction, lang = 'en') => {
   sleep(10000)
 
   try {
@@ -21,7 +21,7 @@ export const createBulletPointSummary = async (title, context, lang = 'en') => {
     const completion = await openai.chat.completions.create({
       messages: [
         { role: 'system', content: CREATE_BULLETPOINT_SUMMARY[lang] + '\n\n' + YOU_MUST_WRITE_IN[lang] },
-        { role: 'user', content: `TEXT:\n${context}\n\nRESULT:\n` },
+        { role: 'user', content: `TEXT:\n${context}\n\nREACTION:\n${reaction}\n\nRESULT:\n` },
       ],
       model: 'gpt-4o',
       temperature: 0,
@@ -58,7 +58,7 @@ export const createBulletPointSummary = async (title, context, lang = 'en') => {
   }
 }
 
-export const createTitle = async (title, context, lang = 'en'): Promise<string> => {
+export const createTitle = async (title, context, reaction, lang = 'en'): Promise<string> => {
   sleep(10000)
 
   try {
@@ -67,7 +67,7 @@ export const createTitle = async (title, context, lang = 'en'): Promise<string> 
     const completion = await openai.chat.completions.create({
       messages: [
         { role: 'system', content: CREATE_TITLE[lang].replace('${title}', title) + '\n\n' + YOU_MUST_WRITE_IN[lang] },
-        { role: 'user', content: `TEXT:\n${context}\n\nRESULT:\n` },
+        { role: 'user', content: `TEXT:\n${context}\n\nREACTION:\n${reaction}\n\nRESULT:\n` },
       ],
       model: 'gpt-4o',
       temperature: 0,
@@ -81,7 +81,7 @@ export const createTitle = async (title, context, lang = 'en'): Promise<string> 
     return ''
   }
 }
-export const generateContext = async (rawText, title, lang = 'en') => {
+export const generateContext = async (rawText, title, reaction, lang = 'en') => {
   sleep(10000)
 
   try {
@@ -95,7 +95,7 @@ export const generateContext = async (rawText, title, lang = 'en') => {
         const completion = await openai.chat.completions.create({
           messages: [
             { role: 'system', content: 'Shorten the following text.' + '\n\n' + YOU_MUST_WRITE_IN[lang] },
-            { role: 'user', content: chunk },
+            { role: 'user', content: chunk + '\n\nREACTION:\n' + reaction },
           ],
           model: 'gpt-4o',
           temperature: 0,
@@ -139,27 +139,27 @@ export const summarize = async (story: Story, lang = 'en'): Promise<Story> => {
   let commentSummary = []
   let title = story.title
 
-  const originContext = await generateContext(story.originBody, story.title, lang)
-  const commentContext = await generateContext(story.commentBody, story.title, lang)
+  const originContext = await generateContext(story.originBody, story.title, story.commentBody, lang)
+  const commentContext = await generateContext(story.commentBody, story.title, story.commentBody, lang)
 
   try {
     if (story.originBody.length === 0) {
       throw new Error('🚨\toriginBody is empty')
     }
-    originSummary = await createBulletPointSummary(story.title, originContext, lang)
+    originSummary = await createBulletPointSummary(story.title, originContext, story.commentBody, lang)
   } catch (e) {
     log(e, 'error')
   }
   try {
-    commentSummary = await createBulletPointSummary(story.title, commentContext, lang)
+    commentSummary = await createBulletPointSummary(story.title, commentContext, story.commentBody, lang)
   } catch (e) {
     log(e, 'error')
   }
-  // try {
-  //   title = await createTitle(story.title, originContext, lang)
-  // } catch (e) {
-  //   log(e, 'error')
-  // }
+  try {
+    title = await createTitle(story.title, originContext, story.commentBody, lang)
+  } catch (e) {
+    log(e, 'error')
+  }
 
   return {
     ...story,

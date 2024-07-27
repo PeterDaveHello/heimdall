@@ -95,3 +95,51 @@ export const translate = async ({
 
   return translatedTexts
 }
+
+export const unifiedTranslate = async ({
+  title,
+  summary,
+  reaction,
+  source,
+  target,
+}: {
+  title: string
+  summary: string[]
+  reaction: string
+  source: string
+  target: string
+}): Promise<{ title: string; summary: string[]; reaction: string }> => {
+  const completion = await openai.chat.completions.create({
+    messages: [
+      {
+        role: 'system',
+        content:
+          TRANSLATE[target] +
+          '\n\n' +
+          ONLY_TRANSLATE_WHAT_IS_GIVEN[source] +
+          '\n\n' +
+          YOU_MUST_WRITE_IN[target] +
+          '\n\n' +
+          BEGIN_IMMEDIATELY[target] +
+          '\n\n',
+      },
+      { role: 'user', content: `TITLE:\n${title}\n\nSUMMARY:\n${summary.join('\n')}\n\nREACTION:\n${reaction}` },
+    ],
+    model: 'gpt-4o',
+    temperature: 0,
+  })
+
+  let { content } = completion.choices[0].message
+
+  const [translatedTitle, translatedSummary, translatedReaction] = content.split('\n\n')
+
+  return {
+    title: sanitize(translatedTitle.split('TITLE:')[1].trim()),
+    summary: translatedSummary
+      .split('SUMMARY:')[1]
+      .trim()
+      .split('\n')
+      .map((s) => sanitize(s)),
+    reaction: sanitize(translatedReaction.split('REACTION:')[1].trim()),
+  }
+}

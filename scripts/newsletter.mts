@@ -4,6 +4,7 @@ import { LOCAL_STARBUCKS, LOCAL_REACTIONS, LOCAL_TODAYS_HN, LOCAL_HN_SUMMARY } f
 import { LinguineCore, LinguineList } from './linguine.mjs'
 import { log } from './util.mjs'
 import { getAdImgHtml, storyAd } from './ad.mjs'
+import { unifiedTranslate } from './translate.mjs'
 
 export const scheduleHnNewsletter = async (localeStories: Record<string, Story[]>) => {
   log('📧 Scheduling Newsletter...', 'info')
